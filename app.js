@@ -50,3 +50,4 @@ app.listen(3000,function () {
     console.log('ok');
 })
 module.exports = app;//module.exports导出app
+
