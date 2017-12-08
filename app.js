@@ -11,7 +11,6 @@ var db = require('./model/db');
 //添加路由文件
 var routes = require('./routes/index');
 
-
 var app = express();
 
 // view engine setup
