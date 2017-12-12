@@ -29,8 +29,10 @@ app.use(bodyParser.json());//解析为json格式
 app.use(bodyParser.urlencoded({ extended: false }));//
 app.use(cookieParser());//处理cookie的
 app.use(express.static(path.join(__dirname, 'public')));
+
 //使用flash
 app.use(flash());
+
 //使用session
 app.use(session({
     //加密
