@@ -29,7 +29,7 @@ User.prototype.save = function (callback) {
                 if(err){
                     return callback(err);
                 }
-                callback(null,user[0]);
+                callback(null,user);//user是一个注册成功后的返回对象，里面包含了查询的相关信息
             })
         })
     })

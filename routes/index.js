@@ -1,7 +1,22 @@
 //引入Users集合操作方法
 var User = require('../model/User');
+//引入Posts集合操作的方法
+var Post = require('../model/Post');
+// var mongodb = require('./db')
 //引入一个加密的插件
 var crypto = require('crypto');
+//引入上传的插件
+var multer = require('multer');
+//配置信息
+var storage = multer.diskStorage({
+    destination:function (req,file,cb) {
+        cb(null,'./public/images')
+    },
+    filename:function (req,file,cb) {
+        cb(null,file.originalname);
+    }
+})
+var upload = multer({storage:storage});
 //未登录情况下，不允许访问发表和退出
 function checkLogin(req,res,next) {
     if(!req.session.user){
@@ -11,7 +26,7 @@ function checkLogin(req,res,next) {
     next()
 }
 //已登录情况下，不允许访问登录和注册
-function chexkNotLogin(req,res,next) {
+function checkNotLogin(req,res,next) {
     if(req.session.user){
         req.flash('error','已登录');
         return res.redirect('back');
@@ -21,15 +36,22 @@ function chexkNotLogin(req,res,next) {
 module.exports = function (app) {
   //首页页面
     app.get('/',function (req,res) {
-        res.render('index',{
-          title:'首页',
-          user:req.session.user,
-          success:req.flash('success').toString(),
-          error:req.flash('error').toString()
+        Post.get(req.session.user,function (err,docs) {
+            if(err){
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            res.render('index',{
+                title:'首页',
+                user:req.session.user,
+                success:req.flash('success').toString(),
+                error:req.flash('error').toString(),
+                docs:docs
+            })
         })
     })
     //注册页面
-    app.get('/reg',chexkNotLogin,function (req,res) {
+    app.get('/reg',checkNotLogin,function (req,res) {
         res.render('reg',{
           title:'注册页面',
           user:req.session.user,
@@ -86,7 +108,7 @@ module.exports = function (app) {
         })
     })
     //登录
-    app.get('/login',chexkNotLogin,function (req,res) {
+    app.get('/login',checkNotLogin,function (req,res) {
         res.render('login',{
           title:'登录页面',
           user:req.session.user,
@@ -132,13 +154,42 @@ module.exports = function (app) {
     })
     //发表行为
     app.post('/post',function (req,res) {
-
+        //获取到当前登录用户的用户名
+        var currentName = req.session.user.username;
+        var newPost = new Post(currentName,req.body.title,req.body.content);
+        // var newPost = new Post({
+        //     name:req.session.user.username,
+        //     title:req.body.title,
+        //     content:req.body.content
+        // });
+        newPost.save(function (err) {
+            if(err) {
+                req.flash('error',err);
+                return res.redirect('/');
+            }
+            req.flash('success','发表成功');
+            return res.redirect('/')
+        })
     })
     //退出
     app.get('/logout',checkLogin,function (req,res) {
         //将session里面的信息清除，并给出提示信息，跳转到首页
         req.session.user = null;
         req.flash('success','退出成功');
-        return res.redirect('/')
+        return res.redirect('/');
+    })
+    //上传的页面
+    app.get('/upload',checkLogin,function (req,res) {
+        res.render('upload',{
+            title:'上传',
+            user:req.session.user,
+            success:req.flash('success').toString(),
+            error:req.flash('error').toString()
+        })
+    })
+    //上传行为
+    app.post('/upload',upload.array('filename',5),function (req,res) {
+        req.flash('success','上传成功');
+        return res.redirect('/upload');
     })
 }
